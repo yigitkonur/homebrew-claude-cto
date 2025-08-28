@@ -3,8 +3,8 @@ class ClaudeCto < Formula
 
   desc "Fire-and-forget task execution system for Claude Code SDK"
   homepage "https://github.com/yigitkonur/claude-cto"
-  url "https://files.pythonhosted.org/packages/c5/92/e5820c452d716c8f4a69575c8fb19c1dbac4ef97b0cda4971e7c7c8c3894/claude_cto-0.8.0.tar.gz"
-  sha256 "a0978d8498bb90fe48a45eff38f8649519305f889f2e91894bb0ee0128d5a423"
+  url "https://files.pythonhosted.org/packages/a9/8a/69e97606fa13d1169e2d0070b88107151a5d3cebe938a486fa41f062113e/claude_cto-0.8.2.tar.gz"
+  sha256 "45ccb56ba20f0e94dd715bce18eba1720696afb5bce7ad33a348fb5ec807ea08"
   license "MIT"
   head "https://github.com/yigitkonur/claude-cto.git", branch: "main"
 
@@ -24,7 +24,7 @@ class ClaudeCto < Formula
     # Install psutil explicitly first (critical dependency that may be missing)
     system libexec/"bin/python", "-m", "pip", "install", "psutil>=5.9.0"
     # Install the package with server and MCP extras for full functionality
-    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.8.0"
+    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.8.2"
     
     # Create wrapper scripts for the executables
     bin.install_symlink Dir[libexec/"bin/claude-cto"]
@@ -57,7 +57,7 @@ class ClaudeCto < Formula
 
   test do
     # Test version output
-    assert_match "0.8", shell_output("#{bin}/claude-cto version 2>&1", 0)
+    assert_match "0.8", shell_output("#{bin}/claude-cto --version 2>&1", 0)
 
     # Test help output
     assert_match "Fire-and-forget task execution", shell_output("#{bin}/claude-cto --help 2>&1", 0)
