@@ -27,19 +27,8 @@ class ClaudeCto < Formula
     bin.install_symlink Dir[libexec/"bin/claude-cto"]
     bin.install_symlink Dir[libexec/"bin/claude-cto-mcp"]
 
-    # Generate shell completions
-    generate_completions_from_executable(bin/"claude-cto", shells: [:bash, :zsh, :fish],
-                                        shell_parameter_format: :none,
-                                        completion_script_generator: proc do |shell|
-      case shell
-      when :bash
-        `#{bin}/claude-cto completion bash 2>/dev/null || echo ""`
-      when :zsh
-        `#{bin}/claude-cto completion zsh 2>/dev/null || echo ""`
-      when :fish
-        `#{bin}/claude-cto completion fish 2>/dev/null || echo ""`
-      end
-    end)
+    # Generate shell completions (simplified without the deprecated parameter)
+    # Note: claude-cto doesn't have built-in completion commands yet
 
     # Create directories for data and logs
     (var/"claude-cto").mkpath
