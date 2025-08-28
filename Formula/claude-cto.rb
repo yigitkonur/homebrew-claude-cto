@@ -21,6 +21,8 @@ class ClaudeCto < Formula
     
     # Upgrade pip and install the package with all extras
     system libexec/"bin/python", "-m", "pip", "install", "--upgrade", "pip"
+    # Install psutil explicitly first (critical dependency that may be missing)
+    system libexec/"bin/python", "-m", "pip", "install", "psutil>=5.9.0"
     # Install the package with server and MCP extras for full functionality
     system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.8.0"
     
