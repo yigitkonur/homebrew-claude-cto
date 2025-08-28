@@ -12,15 +12,16 @@ class ClaudeCto < Formula
   depends_on "node" => :recommended  # For Claude CLI integration
 
   def install
-    # Create virtualenv with pip
+    # Create virtualenv
     venv = virtualenv_create(libexec, "python3.12")
     
-    # Ensure pip is available
+    # Use system to ensure pip is available in the venv
+    system "python3.12", "-m", "venv", "--system-site-packages", libexec
     system libexec/"bin/python", "-m", "ensurepip", "--upgrade"
     
-    # Install the package with all extras from PyPI
-    system libexec/"bin/pip", "install", "--upgrade", "pip"
-    system libexec/"bin/pip", "install", "claude-cto[full]==0.8.0"
+    # Upgrade pip and install the package
+    system libexec/"bin/python", "-m", "pip", "install", "--upgrade", "pip"
+    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[full]==0.8.0"
     
     # Create wrapper scripts for the executables
     bin.install_symlink Dir[libexec/"bin/claude-cto"]
