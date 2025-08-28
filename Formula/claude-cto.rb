@@ -32,8 +32,18 @@ class ClaudeCto < Formula
       
       # Auto-configure MCP server on first run if Claude CLI is available
       if command -v claude >/dev/null 2>&1; then
-        # Check if MCP server is already configured
-        if ! claude mcp list 2>/dev/null | grep -q "claude-cto"; then
+        # Check config file directly to avoid triggering MCP connection
+        if [ -f ~/.claude.json ]; then
+          # Check if claude-cto is already in the config
+          if ! grep -q '"claude-cto"' ~/.claude.json 2>/dev/null; then
+            echo "🗿 Setting up claude-cto MCP server for Claude Code..."
+            claude mcp add claude-cto -s user -- #{libexec}/bin/python -m claude_cto.mcp.factory 2>/dev/null
+            if [ $? -eq 0 ]; then
+              echo "✓ claude-cto is now available in Claude Code!"
+            fi
+          fi
+        else
+          # No config file yet, add the server
           echo "🗿 Setting up claude-cto MCP server for Claude Code..."
           claude mcp add claude-cto -s user -- #{libexec}/bin/python -m claude_cto.mcp.factory 2>/dev/null
           if [ $? -eq 0 ]; then
