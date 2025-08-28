@@ -26,9 +26,31 @@ class ClaudeCto < Formula
     # Install the package with server and MCP extras for full functionality
     system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.8.3"
     
-    # Create wrapper scripts for the executables
-    bin.install_symlink Dir[libexec/"bin/claude-cto"]
-    bin.install_symlink Dir[libexec/"bin/claude-cto-mcp"]
+    # Create intelligent wrapper script that auto-configures MCP on first run
+    (bin/"claude-cto").write <<~EOS
+      #!/bin/bash
+      
+      # Auto-configure MCP server on first run if Claude CLI is available
+      if command -v claude >/dev/null 2>&1; then
+        # Check if MCP server is already configured
+        if ! claude mcp list 2>/dev/null | grep -q "claude-cto"; then
+          echo "🗿 Setting up claude-cto MCP server for Claude Code..."
+          claude mcp add claude-cto -s user -- #{libexec}/bin/python -m claude_cto.mcp.factory 2>/dev/null
+          if [ $? -eq 0 ]; then
+            echo "✓ claude-cto is now available in Claude Code!"
+          fi
+        fi
+      fi
+      
+      # Execute the actual command
+      exec #{libexec}/bin/claude-cto "$@"
+    EOS
+    
+    # Make the wrapper executable
+    chmod 0755, bin/"claude-cto"
+    
+    # Standard symlink for MCP binary
+    bin.install_symlink libexec/"bin/claude-cto-mcp"
 
     # Generate shell completions (simplified without the deprecated parameter)
     # Note: claude-cto doesn't have built-in completion commands yet
@@ -43,36 +65,8 @@ class ClaudeCto < Formula
     (var/"claude-cto").mkpath
     (var/"log").mkpath
     
-    # Automatically configure MCP server for Claude Code if available
-    if which("claude")
-      ohai "Configuring claude-cto as MCP server for Claude Code..."
-      
-      # Check if already configured to avoid duplicates
-      mcp_list = `claude mcp list 2>/dev/null`
-      
-      if !mcp_list.include?("claude-cto")
-        # Use the Python from our virtualenv to ensure all deps are available
-        python_path = libexec/"bin/python"
-        
-        # Add the MCP server at user scope so it's available across projects
-        system "claude", "mcp", "add", "claude-cto", "-s", "user", 
-               "--", python_path.to_s, "-m", "claude_cto.mcp.factory"
-        
-        if $?.success?
-          ohai "✓ claude-cto MCP server configured successfully!"
-          ohai "You can now use claude-cto directly from Claude Code"
-        else
-          opoo "Failed to configure MCP server. You can manually add it with:"
-          opoo "  claude mcp add claude-cto -s user -- #{python_path} -m claude_cto.mcp.factory"
-        end
-      else
-        ohai "claude-cto MCP server already configured"
-      end
-    else
-      ohai "Claude CLI not found. To enable MCP integration later:"
-      ohai "  1. Install Claude CLI: https://docs.anthropic.com/en/docs/claude-code"
-      ohai "  2. Run: claude mcp add claude-cto -s user -- #{libexec}/bin/python -m claude_cto.mcp.factory"
-    end
+    # The MCP configuration is handled by the wrapper script on first run
+    ohai "claude-cto will auto-configure MCP integration on first use (if Claude CLI is available)"
   end
 
   service do
