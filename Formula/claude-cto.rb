@@ -3,8 +3,8 @@ class ClaudeCto < Formula
 
   desc "Fire-and-forget task execution system for Claude Code SDK"
   homepage "https://github.com/yigitkonur/claude-cto"
-  url "https://files.pythonhosted.org/packages/2b/90/eb71624860525e74306add7cda0f2f72969a0eaa201b301a752a78f1f500/claude_cto-0.5.1.tar.gz"
-  sha256 "6b70368d3a8c282335818bd926a17ff4523df5d693028a6de6f760ccd96ba134"
+  url "https://files.pythonhosted.org/packages/c5/92/e5820c452d716c8f4a69575c8fb19c1dbac4ef97b0cda4971e7c7c8c3894/claude_cto-0.8.0.tar.gz"
+  sha256 "a0978d8498bb90fe48a45eff38f8649519305f889f2e91894bb0ee0128d5a423"
   license "MIT"
   head "https://github.com/yigitkonur/claude-cto.git", branch: "main"
 
@@ -17,7 +17,7 @@ class ClaudeCto < Formula
     
     # Install the package with all extras from PyPI
     system libexec/"bin/pip", "install", "--upgrade", "pip"
-    system libexec/"bin/pip", "install", "claude-cto[full]==0.5.1"
+    system libexec/"bin/pip", "install", "claude-cto[full]==0.8.0"
     
     # Create wrapper scripts for the executables
     bin.install_symlink Dir[libexec/"bin/claude-cto"]
@@ -61,7 +61,7 @@ class ClaudeCto < Formula
 
   test do
     # Test version output
-    assert_match "0.5", shell_output("#{bin}/claude-cto --version 2>&1", 0)
+    assert_match "0.8", shell_output("#{bin}/claude-cto version 2>&1", 0)
 
     # Test help output
     assert_match "Fire-and-forget task execution", shell_output("#{bin}/claude-cto --help 2>&1", 0)

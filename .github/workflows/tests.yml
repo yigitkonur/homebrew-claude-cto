@@ -1,0 +1,69 @@
+name: Test Formula
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-formula:
+    strategy:
+      matrix:
+        os: [macos-13, macos-14, ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Homebrew
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew tap ${{ github.repository }} .
+      
+      - name: Install Homebrew on Linux
+        if: runner.os == 'Linux'
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> $GITHUB_ENV
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew tap ${{ github.repository }} .
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Audit formula
+        run: brew audit --strict --online claude-cto
+      
+      - name: Install formula
+        run: brew install claude-cto
+      
+      - name: Test formula
+        run: brew test claude-cto
+      
+      - name: Verify CLI installation
+        run: |
+          claude-cto --help
+          claude-cto server --help
+      
+      - name: Test Python import
+        run: |
+          python -c "import claude_cto; print('Import successful')"
+      
+      - name: Uninstall formula
+        run: brew uninstall claude-cto
+      
+      - name: Test service installation
+        if: runner.os == 'macOS'
+        run: |
+          brew install claude-cto
+          brew services start claude-cto
+          sleep 5
+          brew services list | grep claude-cto
+          brew services stop claude-cto

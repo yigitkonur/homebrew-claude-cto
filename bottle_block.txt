@@ -1,0 +1,5 @@
+  bottle do
+    root_url "https://github.com/yigitkonur/homebrew-claude-cto/releases/download/v0.5.1"
+    rebuild 1
+    sha256 arm64_sequoia: "387a873e990b19efe9b3cd9a1ce74d737de489e5d2155fca1a26d0e4c38d71d9"
+  end

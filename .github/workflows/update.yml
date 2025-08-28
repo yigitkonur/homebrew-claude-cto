@@ -1,0 +1,143 @@
+name: Auto-Update Formula
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+jobs:
+  check-for-updates:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Check PyPI for new version
+        id: check
+        run: |
+          # Get current version from formula
+          CURRENT_VERSION=$(grep -E '^\s*url' Formula/claude-cto.rb | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Get latest version from PyPI
+          LATEST_VERSION=$(python3 -c "
+          import json
+          import urllib.request
+          
+          with urllib.request.urlopen('https://pypi.org/pypi/claude-cto/json') as response:
+              data = json.load(response)
+              print(data['info']['version'])
+          ")
+          echo "Latest version: $LATEST_VERSION"
+          
+          # Compare versions
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+              echo "New version available: $LATEST_VERSION"
+              echo "update_needed=true" >> $GITHUB_OUTPUT
+              echo "new_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+              echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+              echo "No update needed"
+              echo "update_needed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Update formula
+        if: steps.check.outputs.update_needed == 'true'
+        run: |
+          NEW_VERSION="${{ steps.check.outputs.new_version }}"
+          
+          # Get new package URL and SHA256
+          python3 -c "
+          import json
+          import urllib.request
+          import hashlib
+          
+          version = '$NEW_VERSION'
+          
+          # Get package info from PyPI
+          with urllib.request.urlopen(f'https://pypi.org/pypi/claude-cto/{version}/json') as response:
+              data = json.load(response)
+              
+          # Find the source distribution
+          for url_info in data['urls']:
+              if url_info['packagetype'] == 'sdist':
+                  url = url_info['url']
+                  sha256 = url_info['digests']['sha256']
+                  
+                  # Update formula
+                  with open('Formula/claude-cto.rb', 'r') as f:
+                      content = f.read()
+                  
+                  # Replace URL
+                  import re
+                  content = re.sub(
+                      r'url \"[^\"]+\"',
+                      f'url \"{url}\"',
+                      content,
+                      count=1
+                  )
+                  
+                  # Replace SHA256
+                  content = re.sub(
+                      r'sha256 \"[^\"]+\"',
+                      f'sha256 \"{sha256}\"',
+                      content,
+                      count=1
+                  )
+                  
+                  # Replace version in install section
+                  content = re.sub(
+                      r'claude-cto\[full\]==[0-9]+\.[0-9]+\.[0-9]+',
+                      f'claude-cto[full]=={version}',
+                      content
+                  )
+                  
+                  # Replace version in test section
+                  content = re.sub(
+                      r'assert_match \"[0-9]+\.[0-9]+\"',
+                      f'assert_match \"{version.rsplit(\".\", 1)[0]}\"',
+                      content
+                  )
+                  
+                  with open('Formula/claude-cto.rb', 'w') as f:
+                      f.write(content)
+                  
+                  print(f'Formula updated to version {version}')
+                  print(f'URL: {url}')
+                  print(f'SHA256: {sha256}')
+                  break
+          "
+      
+      - name: Test updated formula
+        if: steps.check.outputs.update_needed == 'true'
+        run: |
+          brew tap ${{ github.repository }} .
+          brew audit --strict claude-cto
+      
+      - name: Create pull request
+        if: steps.check.outputs.update_needed == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update claude-cto to ${{ steps.check.outputs.new_version }}"
+          title: "Update claude-cto to ${{ steps.check.outputs.new_version }}"
+          body: |
+            This PR updates claude-cto from ${{ steps.check.outputs.current_version }} to ${{ steps.check.outputs.new_version }}.
+            
+            ## Changes
+            - Updated PyPI package URL
+            - Updated SHA256 hash
+            - Updated version references in formula
+            
+            ## PyPI Release
+            https://pypi.org/project/claude-cto/${{ steps.check.outputs.new_version }}/
+          branch: update-${{ steps.check.outputs.new_version }}
+          labels: |
+            formula-update
+            automated

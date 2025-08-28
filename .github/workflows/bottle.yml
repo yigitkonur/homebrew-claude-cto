@@ -1,0 +1,116 @@
+name: Build Bottles
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      formula:
+        description: 'Formula to bottle'
+        required: true
+        default: 'claude-cto'
+
+jobs:
+  bottle:
+    strategy:
+      matrix:
+        include:
+          - os: macos-13
+            name: ventura
+          - os: macos-14
+            name: sonoma
+          - os: ubuntu-latest
+            name: linux
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Homebrew
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew tap ${{ github.repository }} .
+      
+      - name: Install Homebrew on Linux
+        if: runner.os == 'Linux'
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> $GITHUB_ENV
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew tap ${{ github.repository }} .
+      
+      - name: Install and bottle formula
+        env:
+          FORMULA: ${{ github.event.inputs.formula || 'claude-cto' }}
+        run: |
+          brew install --build-bottle $FORMULA
+          brew bottle --json --root-url="https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name || 'latest' }}" $FORMULA
+      
+      - name: Upload bottle as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bottle-${{ matrix.name }}
+          path: '*.bottle.tar.gz'
+      
+      - name: Upload bottle JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: bottle-json-${{ matrix.name }}
+          path: '*.json'
+  
+  upload-bottles:
+    needs: bottle
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Upload bottles to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            bottle-*/*.bottle.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Update formula with bottle block
+        run: |
+          # Combine all bottle JSONs and create bottle DSL
+          python3 -c "
+          import json
+          import glob
+          
+          bottles = {}
+          for json_file in glob.glob('bottle-json-*/*.json'):
+              with open(json_file) as f:
+                  data = json.load(f)
+                  for formula, bottle_data in data.items():
+                      if formula not in bottles:
+                          bottles[formula] = []
+                      bottles[formula].extend(bottle_data['bottle']['tags'])
+          
+          # Generate bottle DSL for the formula
+          for formula, tags in bottles.items():
+              print(f'Formula: {formula}')
+              print('  bottle do')
+              print(f'    root_url \"https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}\"')
+              for tag in tags:
+                  print(f'    sha256 cellar: :any_skip_relocation, {tag}: \"{tag[\"sha256\"]}\"')
+              print('  end')
+          "
+      
+      - name: Create pull request with bottle update
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Add bottles for ${{ github.event.release.tag_name }}"
+          title: "Add bottles for ${{ github.event.release.tag_name }}"
+          body: "This PR adds bottle definitions for the ${{ github.event.release.tag_name }} release."
+          branch: bottle-${{ github.event.release.tag_name }}
