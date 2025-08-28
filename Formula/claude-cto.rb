@@ -42,6 +42,37 @@ class ClaudeCto < Formula
     # Ensure directories exist with correct permissions
     (var/"claude-cto").mkpath
     (var/"log").mkpath
+    
+    # Automatically configure MCP server for Claude Code if available
+    if which("claude")
+      ohai "Configuring claude-cto as MCP server for Claude Code..."
+      
+      # Check if already configured to avoid duplicates
+      mcp_list = `claude mcp list 2>/dev/null`
+      
+      if !mcp_list.include?("claude-cto")
+        # Use the Python from our virtualenv to ensure all deps are available
+        python_path = libexec/"bin/python"
+        
+        # Add the MCP server at user scope so it's available across projects
+        system "claude", "mcp", "add", "claude-cto", "-s", "user", 
+               "--", python_path.to_s, "-m", "claude_cto.mcp.factory"
+        
+        if $?.success?
+          ohai "✓ claude-cto MCP server configured successfully!"
+          ohai "You can now use claude-cto directly from Claude Code"
+        else
+          opoo "Failed to configure MCP server. You can manually add it with:"
+          opoo "  claude mcp add claude-cto -s user -- #{python_path} -m claude_cto.mcp.factory"
+        end
+      else
+        ohai "claude-cto MCP server already configured"
+      end
+    else
+      ohai "Claude CLI not found. To enable MCP integration later:"
+      ohai "  1. Install Claude CLI: https://docs.anthropic.com/en/docs/claude-code"
+      ohai "  2. Run: claude mcp add claude-cto -s user -- #{libexec}/bin/python -m claude_cto.mcp.factory"
+    end
   end
 
   service do
