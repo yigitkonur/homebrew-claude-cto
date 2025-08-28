@@ -3,8 +3,8 @@ class ClaudeCto < Formula
 
   desc "Fire-and-forget task execution system for Claude Code SDK"
   homepage "https://github.com/yigitkonur/claude-cto"
-  url "https://files.pythonhosted.org/packages/a9/8a/69e97606fa13d1169e2d0070b88107151a5d3cebe938a486fa41f062113e/claude_cto-0.8.2.tar.gz"
-  sha256 "45ccb56ba20f0e94dd715bce18eba1720696afb5bce7ad33a348fb5ec807ea08"
+  url "https://files.pythonhosted.org/packages/d4/4f/a5b3c268eb03f1c623e806bfb0c411563a13b32129c31603357724027d57/claude_cto-0.8.3.tar.gz"
+  sha256 "cbf23c341f12c240712cb23768db625878e514b1f451b32e1c0acc69d9f5b9d8"
   license "MIT"
   head "https://github.com/yigitkonur/claude-cto.git", branch: "main"
 
@@ -24,7 +24,7 @@ class ClaudeCto < Formula
     # Install psutil explicitly first (critical dependency that may be missing)
     system libexec/"bin/python", "-m", "pip", "install", "psutil>=5.9.0"
     # Install the package with server and MCP extras for full functionality
-    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.8.2"
+    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.8.3"
     
     # Create wrapper scripts for the executables
     bin.install_symlink Dir[libexec/"bin/claude-cto"]
