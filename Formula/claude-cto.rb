@@ -19,9 +19,10 @@ class ClaudeCto < Formula
     system "python3.12", "-m", "venv", "--system-site-packages", libexec
     system libexec/"bin/python", "-m", "ensurepip", "--upgrade"
     
-    # Upgrade pip and install the package
+    # Upgrade pip and install the package with all extras
     system libexec/"bin/python", "-m", "pip", "install", "--upgrade", "pip"
-    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[full]==0.8.0"
+    # Install the package with server and MCP extras for full functionality
+    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.8.0"
     
     # Create wrapper scripts for the executables
     bin.install_symlink Dir[libexec/"bin/claude-cto"]
