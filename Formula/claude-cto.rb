@@ -3,8 +3,8 @@ class ClaudeCto < Formula
 
   desc "Fire-and-forget task execution system for Claude Code SDK"
   homepage "https://github.com/yigitkonur/claude-cto"
-  url "https://files.pythonhosted.org/packages/f1/68/fa540ebacd3e4686ec234603f158afc3ae499b913f9ac751ae9a45ba5dea/claude_cto-0.10.1.tar.gz"
-  sha256 "1f4c531eb39da8fe0a3456ce8a58030e75fa5af0f03690ff3112c0e81b3951e4"
+  url "https://files.pythonhosted.org/packages/f7/a1/9cddd6ec03e0667543b1c70a82a85149cbd606836db322741666562046d3/claude_cto-0.10.2.tar.gz"
+  sha256 "facc63b5318faa03fbcb3340b9b48986b1adacefed7627621403649b8564d935"
   license "MIT"
   head "https://github.com/yigitkonur/claude-cto.git", branch: "main"
 
@@ -24,7 +24,7 @@ class ClaudeCto < Formula
     # Install psutil explicitly first (critical dependency that may be missing)
     system libexec/"bin/python", "-m", "pip", "install", "psutil>=5.9.0"
     # Install the package with server and MCP extras for full functionality
-    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.10.1"
+    system libexec/"bin/python", "-m", "pip", "install", "claude-cto[server,mcp]==0.10.2"
     
     # Create intelligent wrapper script that auto-configures MCP on first run
     (bin/"claude-cto").write <<~EOS
