@@ -3,8 +3,8 @@ class ClaudeCto < Formula
 
   desc "Fire-and-forget task execution system for Claude Code SDK"
   homepage "https://github.com/yigitkonur/claude-cto"
-  url "https://files.pythonhosted.org/packages/df/50/485d11696f1c0d2957fd28d3ddbf88e3bf3d82f5f20de761a7a2a5c5a26a/claude_cto-0.10.1.tar.gz"
-  sha256 "e80a7f436046ae9a0f6c81970610ad0d1a82eeeb43d9d0fe58055c2da54f57af"
+  url "https://files.pythonhosted.org/packages/f1/68/fa540ebacd3e4686ec234603f158afc3ae499b913f9ac751ae9a45ba5dea/claude_cto-0.10.1.tar.gz"
+  sha256 "1f4c531eb39da8fe0a3456ce8a58030e75fa5af0f03690ff3112c0e81b3951e4"
   license "MIT"
   head "https://github.com/yigitkonur/claude-cto.git", branch: "main"
 
